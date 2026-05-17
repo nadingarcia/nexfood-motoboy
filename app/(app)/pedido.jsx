@@ -189,19 +189,10 @@ export default function Pedido() {
 
           {/* Botão navegar */}
           <TouchableOpacity style={s.btnNavegar} onPress={abrirNavegacao} activeOpacity={0.8}>
-  <Feather name="navigation" size={16} color="#8b5cf6" />
-  <Text style={s.btnNavegarTxt}>Abrir no Maps</Text>
-</TouchableOpacity>
+            <Feather name="navigation" size={16} color="#8b5cf6" />
+            <Text style={s.btnNavegarTxt}>Abrir no Maps</Text>
+          </TouchableOpacity>
 
-{/* 🧪 TESTE — remover depois */}
-<TouchableOpacity
-  style={[s.btnNavegar, { borderTopWidth: 0, marginTop: 0 }]}
-  onPress={() => router.push('/(app)/testeMapa')}
-  activeOpacity={0.8}
->
-  <MaterialCommunityIcons name="map-marker-radius" size={16} color="#f59e0b" />
-  <Text style={[s.btnNavegarTxt, { color: '#f59e0b' }]}>🧪 Ver mapa ao vivo</Text>
-</TouchableOpacity>
         </View>
 
         {/* Card: cliente e pagamento */}
