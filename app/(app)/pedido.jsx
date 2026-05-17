@@ -57,39 +57,39 @@ export default function Pedido() {
       }
 
       setLoading(false);
-      iniciarGPS(mb);
+      iniciarGPS(mb, sl);
     }
 
     iniciar();
     return () => pararGPS();
   }, []);
 
-  // --- GPS: pede permissão e começa a enviar localização ---
-  async function iniciarGPS(mb) {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('[pedido] permissão de localização negada');
-      return;
-    }
-
-    async function enviarLocalizacao() {
-      try {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High
-        });
-        await api.post(`/motoboy/${mb._id}/localizacao`, {
-          restauranteSlug: slug,
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-        });
-      } catch (err) {
-        console.log('[pedido] erro ao enviar localização', err.message);
-      }
-    }
-
-    enviarLocalizacao(); // envia imediatamente
-    gpsIntervalo.current = setInterval(enviarLocalizacao, GPS_INTERVAL);
+// E na função, recebe o slug como parâmetro:
+async function iniciarGPS(mb, restauranteSlug) {  // ← adiciona parâmetro
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    console.log('[pedido] permissão de localização negada');
+    return;
   }
+
+  async function enviarLocalizacao() {
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High
+      });
+      await api.post(`/motoboy/${mb._id}/localizacao`, {
+        restauranteSlug: restauranteSlug,  // ← usa o parâmetro, não o state
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+      });
+    } catch (err) {
+      console.log('[pedido] erro ao enviar localização', err.message);
+    }
+  }
+
+  enviarLocalizacao();
+  gpsIntervalo.current = setInterval(enviarLocalizacao, GPS_INTERVAL);
+}
 
   function pararGPS() {
     if (gpsIntervalo.current) {
