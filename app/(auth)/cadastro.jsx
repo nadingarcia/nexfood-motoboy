@@ -75,7 +75,7 @@ export default function Cadastro() {
         restauranteSlug: form.restauranteSlug.trim().toLowerCase(), // enviando o slug digitado
       });
 
-      await salvarMotoboy(data.motoboy);
+      await salvarMotoboy(data.motoboy, form.restauranteSlug.trim().toLowerCase());
       router.replace('/(app)/fila');
     } catch (err) {
       console.log('ERRO CADASTRO =>', err?.response?.data || err.message);

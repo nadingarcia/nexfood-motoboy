@@ -1,3 +1,4 @@
+// app/(app)/fila.jsx
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,35 +13,36 @@ import {
   View
 } from 'react-native';
 import api from '../../services/api';
-import { carregarMotoboy, limparMotoboy } from '../../store/authStore';
+import { registrarPushToken } from '../../services/notificationService';
+import { carregarMotoboy, carregarSlug, limparMotoboy } from '../../store/authStore';
 
-const SLUG_TESTE = 'nexfood';
-const POLLING_INTERVAL = 30000; // 30s — só fallback, a notificação vem pelo WhatsApp
+const POLLING_INTERVAL = 30000;
 
 export default function Fila() {
-  const router = useRouter();
+  const router   = useRouter();
   const [motoboy, setMotoboy] = useState(null);
-  const [status, setStatus] = useState(null);
+  const [slug,    setSlug]    = useState(null);
+  const [status,  setStatus]  = useState(null);
   const [loading, setLoading] = useState(true);
-  const [buscando, setBuscando] = useState(false); // loading do botão manual
+  const [buscando, setBuscando] = useState(false);
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.parallel([
-        Animated.timing(pulseAnim, { toValue: 1.5, duration: 2000, useNativeDriver: true }),
-        Animated.timing(opacityAnim, { toValue: 0, duration: 2000, useNativeDriver: true })
+        Animated.timing(pulseAnim,   { toValue: 1.5, duration: 2000, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0,   duration: 2000, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
-  const buscarStatus = useCallback(async (mb, { silencioso = false } = {}) => {
+  const buscarStatus = useCallback(async (mb, sl, { silencioso = false } = {}) => {
     if (!silencioso) setBuscando(true);
     try {
       const { data } = await api.get(`/motoboy/${mb._id}/status`, {
-        params: { restauranteSlug: SLUG_TESTE }
+        params: { restauranteSlug: sl },
       });
       setStatus(data);
       if (data.temEntrega || data.entregaAtual) {
@@ -48,9 +50,7 @@ export default function Fila() {
       }
     } catch (err) {
       console.log('[fila] erro ao buscar status', err.message);
-      if (!silencioso) {
-        Alert.alert('Erro', 'Não foi possível verificar o status. Tente novamente.');
-      }
+      if (!silencioso) Alert.alert('Erro', 'Não foi possível verificar o status.');
     } finally {
       if (!silencioso) setBuscando(false);
     }
@@ -61,21 +61,25 @@ export default function Fila() {
 
     async function iniciar() {
       const mb = await carregarMotoboy();
-      if (!mb) { router.replace('/(auth)/login'); return; }
-      setMotoboy(mb);
+      const sl = await carregarSlug();
 
+      if (!mb || !sl) { router.replace('/(auth)/login'); return; }
+
+      setMotoboy(mb);
+      setSlug(sl);
+
+      // Check-in silencioso
       try {
-        await api.post('/motoboy/checkin', {
-          motoboyId: mb._id,
-          restauranteSlug: SLUG_TESTE,
-        });
+        await api.post('/motoboy/checkin', { motoboyId: mb._id, restauranteSlug: sl });
       } catch (_) {}
 
-      await buscarStatus(mb, { silencioso: true });
+      // Registra push token (permissão + envia ao servidor)
+      await registrarPushToken(mb._id, sl);
+
+      await buscarStatus(mb, sl, { silencioso: true });
       setLoading(false);
 
-      // Polling leve de 30s — só fallback caso a notificação WhatsApp falhe
-      intervalo = setInterval(() => buscarStatus(mb, { silencioso: true }), POLLING_INTERVAL);
+      intervalo = setInterval(() => buscarStatus(mb, sl, { silencioso: true }), POLLING_INTERVAL);
     }
 
     iniciar();
@@ -89,15 +93,12 @@ export default function Fila() {
         text: 'Sair', style: 'destructive',
         onPress: async () => {
           try {
-            await api.post('/motoboy/checkout', {
-              motoboyId: motoboy._id,
-              restauranteSlug: SLUG_TESTE,
-            });
+            await api.post('/motoboy/checkout', { motoboyId: motoboy._id, restauranteSlug: slug });
           } catch (_) {}
           await limparMotoboy();
           router.replace('/(auth)/login');
-        }
-      }
+        },
+      },
     ]);
   }
 
@@ -120,10 +121,20 @@ export default function Fila() {
           <Text style={s.headerTitle}>Painel de Entregas</Text>
           <Text style={s.headerSub}>Olá, {motoboy?.nome?.split(' ')[0]} 👋</Text>
         </View>
-        <TouchableOpacity style={s.btnSair} onPress={handleSair}>
-          <Feather name="power" size={18} color="#ef4444" />
-          <Text style={s.sairTxt}>Sair</Text>
-        </TouchableOpacity>
+        <View style={s.headerActions}>
+          {/* Histórico do dia */}
+          <TouchableOpacity
+            style={s.btnHistorico}
+            onPress={() => router.push('/(app)/historico')}
+          >
+            <Feather name="clock" size={18} color="#a1a1aa" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.btnSair} onPress={handleSair}>
+            <Feather name="power" size={18} color="#ef4444" />
+            <Text style={s.sairTxt}>Sair</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={s.radarContainer}>
@@ -134,7 +145,7 @@ export default function Fila() {
               <MaterialCommunityIcons name="radar" size={48} color="#10b981" />
             </View>
             <Text style={s.radarTitulo}>Você está Online</Text>
-            <Text style={s.radarSub}>Quando receber o WhatsApp, toque o botão abaixo</Text>
+            <Text style={s.radarSub}>Aguarde a notificação ou toque o botão abaixo</Text>
           </>
         ) : (
           <>
@@ -147,10 +158,9 @@ export default function Fila() {
         )}
       </View>
 
-      {/* Botão principal — motoboy toca depois de ver o WhatsApp */}
       <TouchableOpacity
         style={[s.btnBuscar, buscando && s.btnBuscarDisabled]}
-        onPress={() => motoboy && buscarStatus(motoboy)}
+        onPress={() => motoboy && slug && buscarStatus(motoboy, slug)}
         disabled={buscando}
         activeOpacity={0.8}
       >
@@ -171,7 +181,7 @@ export default function Fila() {
           </View>
           <View>
             <Text style={s.infoLabel}>Conectado ao restaurante</Text>
-            <Text style={s.infoValor}>{status?.restauranteNome || SLUG_TESTE}</Text>
+            <Text style={s.infoValor}>{status?.restauranteNome || slug}</Text>
           </View>
         </View>
       </View>
@@ -211,4 +221,8 @@ const s = StyleSheet.create({
 
   rodape: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 12 },
   rodapeTxt: { color: '#52525b', fontSize: 13 },
+
+  // Adicione dentro do seu StyleSheet.create, junto com os outros:
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  btnHistorico:  { padding: 8, backgroundColor: '#18181b', borderRadius: 10, marginRight: 4 },
 });

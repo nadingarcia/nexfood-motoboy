@@ -1,16 +1,23 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+// store/authStore.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHAVE = '@nexfood_motoboy'
+const MOTOBOY_KEY = '@nex_motoboy';
+const SLUG_KEY    = '@nex_slug';
 
-export async function salvarMotoboy(dados) {
-  await AsyncStorage.setItem(CHAVE, JSON.stringify(dados))
+export async function salvarMotoboy(motoboy, slug) {
+  await AsyncStorage.setItem(MOTOBOY_KEY, JSON.stringify(motoboy));
+  if (slug) await AsyncStorage.setItem(SLUG_KEY, slug);
 }
 
 export async function carregarMotoboy() {
-  const raw = await AsyncStorage.getItem(CHAVE)
-  return raw ? JSON.parse(raw) : null
+  const json = await AsyncStorage.getItem(MOTOBOY_KEY);
+  return json ? JSON.parse(json) : null;
+}
+
+export async function carregarSlug() {
+  return await AsyncStorage.getItem(SLUG_KEY);
 }
 
 export async function limparMotoboy() {
-  await AsyncStorage.removeItem(CHAVE)
+  await AsyncStorage.multiRemove([MOTOBOY_KEY, SLUG_KEY]);
 }

@@ -14,10 +14,9 @@ import {
   View
 } from 'react-native';
 import api from '../../services/api';
-import { carregarMotoboy } from '../../store/authStore';
+import { carregarMotoboy, carregarSlug } from '../../store/authStore';
 
-const SLUG_TESTE = 'nexfood';
-const GPS_INTERVAL = 10000; // envia localização a cada 10s
+const GPS_INTERVAL = 10000;
 
 export default function Pedido() {
   const router = useRouter();
@@ -26,6 +25,7 @@ export default function Pedido() {
   const [loading, setLoading] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
   const gpsIntervalo = useRef(null);
+  const [slug, setSlug] = useState(null);
 
   // --- Carrega dados reais da entrega ---
   useEffect(() => {
@@ -34,9 +34,13 @@ export default function Pedido() {
       if (!mb) { router.replace('/(auth)/login'); return; }
       setMotoboy(mb);
 
+      const sl = await carregarSlug();
+      if (!sl) { router.replace('/(auth)/login'); return; }
+      setSlug(sl);
+
       try {
         const { data } = await api.get(`/motoboy/${mb._id}/status`, {
-          params: { restauranteSlug: SLUG_TESTE }
+          params: { restauranteSlug: sl }
         });
         if (data.entregaAtual) {
           setEntrega(data.entregaAtual);
@@ -74,7 +78,7 @@ export default function Pedido() {
           accuracy: Location.Accuracy.High
         });
         await api.post(`/motoboy/${mb._id}/localizacao`, {
-          restauranteSlug: SLUG_TESTE,
+          restauranteSlug: slug,
           lat: loc.coords.latitude,
           lng: loc.coords.longitude,
         });
@@ -117,7 +121,7 @@ export default function Pedido() {
             pararGPS();
             try {
               await api.post(`/motoboy/${motoboy._id}/finalizar-entrega`, {
-                restauranteSlug: SLUG_TESTE,
+                restauranteSlug: slug,
                 entregaId: entrega._id,
               });
               Alert.alert('✅ Entregue!', 'Pedido finalizado com sucesso.', [

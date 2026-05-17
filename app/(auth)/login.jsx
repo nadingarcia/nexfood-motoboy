@@ -64,7 +64,7 @@ export default function Login() {
         restauranteSlug: restauranteSlug.trim().toLowerCase(), // Tratando maiúsculas
       });
 
-      await salvarMotoboy(data.motoboy);
+      await salvarMotoboy(data.motoboy, restauranteSlug.trim().toLowerCase());
       router.replace('/(app)/fila');
     } catch (err) {
       console.log('ERRO LOGIN =>', err?.response?.data || err.message);

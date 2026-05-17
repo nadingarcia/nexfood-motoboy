@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959376886453",
+    "project_id": "nexfood-motoboy",
+    "storage_bucket": "nexfood-motoboy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959376886453:android:ffe2b9239271c115c50cfc",
+        "android_client_info": {
+          "package_name": "com.nexfood.nexfoodmotoboy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCypJ4KjbHRO-XqsL5xHa6mJKZ720517_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
