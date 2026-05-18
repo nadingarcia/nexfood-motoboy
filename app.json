@@ -37,10 +37,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-task-manager",
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Usado para rastrear sua entrega em tempo real."
+          "locationAlwaysAndWhenInUsePermission": "Usado para rastrear sua entrega em tempo real.",
+          "locationAlwaysPermission": "Necessário para continuar rastreando enquanto você navega.",
+          "isAndroidBackgroundLocationEnabled": true
         }
       ],
       [

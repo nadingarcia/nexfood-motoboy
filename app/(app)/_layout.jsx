@@ -2,6 +2,7 @@
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import '../../tasks/locationTask';
 
 export default function AppLayout() {
   const router = useRouter();
