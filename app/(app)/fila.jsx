@@ -1,20 +1,23 @@
 // app/(app)/fila.jsx
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Linking,          // ← adicionar
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+
 import api from '../../services/api';
 import { registrarPushToken } from '../../services/notificationService';
 import { carregarMotoboy, carregarSlug, limparMotoboy } from '../../store/authStore';
+import * as Location from 'expo-location';
 
 const POLLING_INTERVAL = 30000;
 
@@ -28,6 +31,35 @@ export default function Fila() {
 
   const pulseAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.5)).current;
+
+  useFocusEffect(
+  useCallback(() => {
+    verificarPermissoes();
+  }, [])
+);
+
+async function verificarPermissoes() {
+  const { status: fg } = await Location.getForegroundPermissionsAsync();
+  const { status: bg } = await Location.getBackgroundPermissionsAsync();
+
+  if (fg !== 'granted' || bg !== 'granted') {
+    Alert.alert(
+      '📍 Localização necessária',
+      'Para receber entregas, ative a localização como "Permitir sempre" nas configurações do celular.',
+      [
+        {
+          text: 'Abrir configurações',
+          onPress: () => Linking.openSettings(),
+        },
+        {
+          text: 'Já ativei',
+          onPress: () => verificarPermissoes(),
+        }
+      ],
+      { cancelable: false }
+    );
+  }
+}
 
   useEffect(() => {
     Animated.loop(

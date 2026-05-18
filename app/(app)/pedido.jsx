@@ -67,9 +67,13 @@ export default function Pedido() {
       return;
     }
 
-    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (bgStatus !== 'granted') {
-      console.log('[pedido] permissão background negada — GPS pausará ao minimizar');
+    try {
+      const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (bgStatus !== 'granted') {
+        console.log('[pedido] permissão background negada — GPS pausará ao minimizar');
+      }
+    } catch (e) {
+      console.log('[pedido] background location não disponível neste build:', e.message);
     }
 
     const isRunning = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME).catch(() => false);
