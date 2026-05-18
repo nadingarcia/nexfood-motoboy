@@ -42,6 +42,10 @@ async function verificarPermissoes() {
   const { status: fg } = await Location.getForegroundPermissionsAsync();
   const { status: bg } = await Location.getBackgroundPermissionsAsync();
 
+  // Nunca foi solicitada — deixa o pedido.jsx pedir na hora
+  if (fg === 'undetermined') return;
+
+  // Foi solicitada mas negada — aí sim avisa
   if (fg !== 'granted' || bg !== 'granted') {
     Alert.alert(
       '📍 Localização necessária',
